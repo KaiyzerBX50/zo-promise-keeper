@@ -282,6 +282,8 @@ export default function PromiseKeeper() {
   const [copiedPrompt, setCopiedPrompt] = useState<number | null>(null);
   const [draggedPromise, setDraggedPromise] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [expandedMobileCol, setExpandedMobileCol] = useState<string | null>(null);
+  const [showMoveForId, setShowMoveForId] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
     try { return localStorage.getItem("pk-dark") === "1"; } catch { return false; }
   });
@@ -360,15 +362,15 @@ export default function PromiseKeeper() {
     return (
       <div className="space-y-4">
         <TextField label="What did you promise?" value={form.promise} onChange={(v) => set("promise", v)} placeholder="I said I would…" theme={T} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <TextField label="Who is it for?" value={form.personName} onChange={(v) => set("personName", v)} placeholder="Name" theme={T} />
           <SelectField label="Category" value={form.category} onChange={(v) => set("category", v)} options={CATEGORIES} theme={T} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <DateField label="Date Promised" value={form.datePromised} onChange={(v) => set("datePromised", v)} theme={T} />
           <DateField label="Due Date" value={form.dueDate} onChange={(v) => set("dueDate", v)} theme={T} />
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <SelectField label="Status" value={form.status} onChange={(v) => set("status", v)} options={STATUSES} theme={T} />
           <SelectField label="Priority" value={form.priority} onChange={(v) => set("priority", v)} options={PRIORITIES} theme={T} />
           <SelectField label="Weight" value={form.emotionalWeight} onChange={(v) => set("emotionalWeight", v)} options={EMOTIONAL_WEIGHTS} theme={T} />
@@ -399,11 +401,11 @@ export default function PromiseKeeper() {
     return (
       <div className="space-y-4">
         <TextField label="Name" value={form.name} onChange={(v) => set("name", v)} placeholder="Who is this person?" theme={T} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <SelectField label="Relationship" value={form.relationshipType} onChange={(v) => set("relationshipType", v)} options={RELATIONSHIP_TYPES} theme={T} />
           <SelectField label="Warmth" value={form.warmth} onChange={(v) => set("warmth", v)} options={WARMTH_LEVELS} theme={T} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <DateField label="Last Contact" value={form.lastContact} onChange={(v) => set("lastContact", v)} theme={T} />
           <DateField label="Next Touchpoint" value={form.nextTouchpoint} onChange={(v) => set("nextTouchpoint", v)} theme={T} />
         </div>
@@ -426,12 +428,12 @@ export default function PromiseKeeper() {
 
   const PromiseRow = ({ p }: { p: any }) => {
     const days = daysUntil(p.dueDate);
-    const dueLabel = p.dueDate ? (days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "Due today" : days <= 7 ? `${days}d left` : formatDate(p.dueDate)) : "";
+    const dueLabel = p.dueDate ? (days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "Today" : days <= 7 ? `${days}d` : formatDate(p.dueDate)) : "";
     return (
-      <div className="flex items-center gap-3 py-3 px-4 rounded-2xl transition-colors group">
+      <div className="flex items-start sm:items-center gap-3 py-3 px-3 sm:px-4 rounded-2xl transition-colors group" style={{ ["--hover-bg" as any]: T.hoverBg }}>
         <button
           onClick={() => api("update-promise", { id: p.id, status: p.status === "Done" ? "On Track" : "Done" })}
-          className="shrink-0"
+          className="shrink-0 mt-0.5 sm:mt-0"
         >
           {p.status === "Done"
             ? <CheckCircle size={22} style={{ color: "#B7F1D7" }} fill="#B7F1D7" />
@@ -448,10 +450,10 @@ export default function PromiseKeeper() {
         <div className="flex items-center gap-1.5 shrink-0">
           <StatusBadge status={p.status} dark={darkMode} />
           <PriorityBadge priority={p.priority} dark={darkMode} />
-          <button onClick={() => setEditingPromise(p)} className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/5">
+          <button onClick={() => setEditingPromise(p)} className="p-1.5 rounded-lg sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-black/5">
             <Edit3 size={14} style={{ color: T.textSecondary }} />
           </button>
-          <button onClick={() => api("delete-promise", { id: p.id })} className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/5">
+          <button onClick={() => api("delete-promise", { id: p.id })} className="p-1.5 rounded-lg sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-black/5">
             <Trash2 size={14} style={{ color: T.accent }} />
           </button>
         </div>
@@ -572,7 +574,7 @@ export default function PromiseKeeper() {
     return (
       <div className="space-y-3">
         <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="What did you say you'd do?" className="w-full px-4 py-3 rounded-2xl border text-sm" style={{ borderColor: T.inputBorder, backgroundColor: T.inputBg, color: T.textPrimary }} onKeyDown={(e) => e.key === "Enter" && submit()} />
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <input type="text" value={person} onChange={(e) => setPerson(e.target.value)} placeholder="Who for?" className="px-3 py-2 rounded-xl border text-xs" style={{ borderColor: T.inputBorder, backgroundColor: T.inputBg, color: T.textPrimary }} />
           <input type="date" value={due} onChange={(e) => setDue(e.target.value)} className="px-3 py-2 rounded-xl border text-xs" style={{ borderColor: T.inputBorder, backgroundColor: T.inputBg, color: T.textPrimary }} />
           <input type="text" value={next} onChange={(e) => setNext(e.target.value)} placeholder="Next step?" className="px-3 py-2 rounded-xl border text-xs" style={{ borderColor: T.inputBorder, backgroundColor: T.inputBg, color: T.textPrimary }} />
@@ -873,10 +875,50 @@ export default function PromiseKeeper() {
     const handleDragLeave = (e: React.DragEvent) => { const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); const { clientX, clientY } = e; if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) { setDragOverColumn(null); } };
     const handleDrop = (e: React.DragEvent, status: string) => { e.preventDefault(); const promiseId = e.dataTransfer.getData("text/plain"); if (promiseId) { const p = promises.find((pr: any) => pr.id === promiseId); if (p && p.status !== status) { api("update-promise", { id: promiseId, status }); } } setDraggedPromise(null); setDragOverColumn(null); };
     const handleDragEnd = () => { setDraggedPromise(null); setDragOverColumn(null); };
+
+    const MobileStatusMove = ({ p }: { p: any }) => (
+      <div className="flex flex-wrap gap-1 mt-2">
+        {boardStatuses.filter(s => s !== p.status).map(s => (
+          <button key={s} onClick={() => api("update-promise", { id: p.id, status: s })} className="px-2 py-0.5 rounded-full text-[10px] font-medium border" style={{ borderColor: T.inputBorder, color: T.textSecondary }}>\u2192 {s}</button>
+        ))}
+      </div>
+    );
+
+    const BoardCard = ({ p, status }: { p: any; status: string }) => {
+      const days = daysUntil(p.dueDate);
+      const dueLabel = p.dueDate ? (days < 0 ? \`\${Math.abs(days)}d overdue\` : days === 0 ? "Today" : \`\${days}d\`) : "";
+      const isDragging = draggedPromise === p.id;
+      const showMove = showMoveForId === p.id;
+      return (
+        <div key={p.id} draggable onDragStart={(e) => handleDragStart(e, p.id)} onDragEnd={handleDragEnd} className="p-3 rounded-xl border cursor-grab active:cursor-grabbing transition-all duration-150 group" style={{ backgroundColor: isDragging ? T.accentBg : T.inputBg, borderColor: isDragging ? T.accent : T.inputBorder, opacity: isDragging ? 0.4 : 1, transform: isDragging ? "scale(0.95)" : "scale(1)" }}>
+          <div className="flex items-start gap-2">
+            <GripVertical size={14} className="shrink-0 mt-0.5 opacity-30 group-hover:opacity-60 transition-opacity hidden sm:block" style={{ color: T.textSecondary }} />
+            <div className="flex-1 min-w-0">
+              <p className={\`text-sm font-medium leading-snug \${status === "Done" ? "line-through opacity-50" : ""}\`} style={{ color: T.textPrimary }}>{p.promise}</p>
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                {p.personName && <span className="text-[11px]" style={{ color: T.textSecondary }}>\u2192 {p.personName}</span>}
+                <PriorityBadge priority={p.priority} dark={darkMode} />
+                {dueLabel && <span className="text-[11px] font-medium" style={{ color: days < 0 ? "#FF8F7A" : days <= 2 ? "#FFB38A" : T.textSecondary }}>{dueLabel}</span>}
+              </div>
+              {p.nextAction && <p className="text-[11px] mt-1 truncate" style={{ color: T.textSecondary }}>\u2192 {p.nextAction}</p>}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 mt-2">
+            <button onClick={(e) => { e.stopPropagation(); setEditingPromise(p); }} className="p-1 rounded-lg" style={{ backgroundColor: T.chipBg }}><Edit3 size={11} style={{ color: T.textSecondary }} /></button>
+            {status !== "Done" && <button onClick={(e) => { e.stopPropagation(); api("update-promise", { id: p.id, status: "Done" }); }} className="p-1 rounded-lg" style={{ backgroundColor: T.chipBg }}><CheckCircle size={11} style={{ color: "#B7F1D7" }} /></button>}
+            <button onClick={(e) => { e.stopPropagation(); api("delete-promise", { id: p.id }); }} className="p-1 rounded-lg" style={{ backgroundColor: T.chipBg }}><Trash2 size={11} style={{ color: T.accent }} /></button>
+            <button onClick={(e) => { e.stopPropagation(); setShowMoveForId(showMove ? null : p.id); }} className="p-1 rounded-lg sm:hidden ml-auto" style={{ backgroundColor: T.chipBg }}><ArrowRight size={11} style={{ color: T.accent }} /></button>
+          </div>
+          {showMove && <MobileStatusMove p={p} />}
+        </div>
+      );
+    };
+
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between"><div><h2 className="text-2xl font-bold" style={{ color: T.textPrimary }}>Board</h2><p className="text-sm" style={{ color: T.textSecondary }}>Drag promises between statuses</p></div><button onClick={() => setShowAddPromise(true)} className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold text-white" style={{ backgroundColor: T.accent }}><Plus size={16} /> Add</button></div>
-        <div className="overflow-x-auto pb-4 -mx-4 px-4"><div className="flex gap-3" style={{ minWidth: \`$\{boardStatuses.length * 272}px\` }}>{boardStatuses.map((status) => { const columnPromises = promises.filter((p: any) => p.status === status); const statusColor = STATUS_COLORS[status] || "#F4EDE3"; const isOver = dragOverColumn === status; return (<div key={status} className="flex-1 min-w-[256px] rounded-2xl border flex flex-col transition-all duration-150" style={{ backgroundColor: isOver ? (darkMode ? "rgba(255,143,122,0.08)" : "rgba(255,143,122,0.06)") : T.cardBg, borderColor: isOver ? T.accent : T.cardBorder, boxShadow: isOver ? \`0 0 0 1px $\{T.accent}40\` : "none" }} onDragOver={(e) => handleDragOver(e, status)} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, status)}><div className="px-3 py-2.5 border-b" style={{ borderColor: T.cardBorder }}><div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: statusColor }} /><span className="text-xs font-semibold" style={{ color: T.textPrimary }}>{status}</span></div><span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: T.chipBg, color: T.textSecondary }}>{columnPromises.length}</span></div><div className="p-2 flex-1 space-y-2 overflow-y-auto" style={{ maxHeight: "calc(100vh - 180px)" }}>{columnPromises.length === 0 ? (<div className="py-10 text-center rounded-xl border-2 border-dashed" style={{ borderColor: isOver ? T.accent : T.inputBorder }}><p className="text-xs" style={{ color: T.textSecondary }}>{isOver ? "Drop here" : "Empty"}</p></div>) : (columnPromises.map((p: any) => { const days = daysUntil(p.dueDate); const dueLabel = p.dueDate ? (days < 0 ? \`$\{Math.abs(days)}d overdue\` : days === 0 ? "Today" : \`$\{days}d\`) : ""; const isDragging = draggedPromise === p.id; return (<div key={p.id} draggable onDragStart={(e) => handleDragStart(e, p.id)} onDragEnd={handleDragEnd} className="p-3 rounded-xl border cursor-grab active:cursor-grabbing transition-all duration-150 group" style={{ backgroundColor: isDragging ? T.accentBg : T.inputBg, borderColor: isDragging ? T.accent : T.inputBorder, opacity: isDragging ? 0.4 : 1, transform: isDragging ? "scale(0.95)" : "scale(1)" }}><div className="flex items-start gap-2"><GripVertical size={14} className="shrink-0 mt-0.5 opacity-30 group-hover:opacity-60 transition-opacity" style={{ color: T.textSecondary }} /><div className="flex-1 min-w-0"><p className={\`text-sm font-medium leading-snug $\{status === "Done" ? "line-through opacity-50" : ""}\`} style={{ color: T.textPrimary }}>{p.promise}</p><div className="flex items-center gap-1.5 mt-1.5 flex-wrap">{p.personName && (<span className="text-[11px]" style={{ color: T.textSecondary }}>\u2192 {p.personName}</span>)}<PriorityBadge priority={p.priority} dark={darkMode} />{dueLabel && (<span className="text-[11px] font-medium" style={{ color: days < 0 ? "#FF8F7A" : days <= 2 ? "#FFB38A" : T.textSecondary }}>{dueLabel}</span>)}</div>{p.nextAction && (<p className="text-[11px] mt-1 truncate" style={{ color: T.textSecondary }}>\u2192 {p.nextAction}</p>)}</div></div><div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={(e) => { e.stopPropagation(); setEditingPromise(p); }} className="p-1 rounded-lg" style={{ backgroundColor: T.chipBg }}><Edit3 size={11} style={{ color: T.textSecondary }} /></button>{status !== "Done" && (<button onClick={(e) => { e.stopPropagation(); api("update-promise", { id: p.id, status: "Done" }); }} className="p-1 rounded-lg" style={{ backgroundColor: T.chipBg }}><CheckCircle size={11} style={{ color: "#B7F1D7" }} /></button>)}<button onClick={(e) => { e.stopPropagation(); api("delete-promise", { id: p.id }); }} className="p-1 rounded-lg" style={{ backgroundColor: T.chipBg }}><Trash2 size={11} style={{ color: T.accent }} /></button></div></div>); }))}</div></div>); })}</div></div>
+        <div className="hidden sm:block overflow-x-auto pb-4 -mx-4 px-4"><div className="flex gap-3" style={{ minWidth: \`\${boardStatuses.length * 272}px\` }}>{boardStatuses.map((status) => { const columnPromises = promises.filter((p: any) => p.status === status); const statusColor = STATUS_COLORS[status] || "#F4EDE3"; const isOver = dragOverColumn === status; return (<div key={status} className="flex-1 min-w-[256px] rounded-2xl border flex flex-col transition-all duration-150" style={{ backgroundColor: isOver ? (darkMode ? "rgba(255,143,122,0.08)" : "rgba(255,143,122,0.06)") : T.cardBg, borderColor: isOver ? T.accent : T.cardBorder, boxShadow: isOver ? \`0 0 0 1px \${T.accent}40\` : "none" }} onDragOver={(e) => handleDragOver(e, status)} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, status)}><div className="px-3 py-2.5 border-b" style={{ borderColor: T.cardBorder }}><div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: statusColor }} /><span className="text-xs font-semibold" style={{ color: T.textPrimary }}>{status}</span></div><span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: T.chipBg, color: T.textSecondary }}>{columnPromises.length}</span></div><div className="p-2 flex-1 space-y-2 overflow-y-auto" style={{ maxHeight: "calc(100vh - 180px)" }}>{columnPromises.length === 0 ? (<div className="py-10 text-center rounded-xl border-2 border-dashed" style={{ borderColor: isOver ? T.accent : T.inputBorder }}><p className="text-xs" style={{ color: T.textSecondary }}>{isOver ? "Drop here" : "Empty"}</p></div>) : (columnPromises.map((p: any) => <BoardCard key={p.id} p={p} status={status} />))}</div></div>); })}</div></div>
+        <div className="sm:hidden space-y-2">{boardStatuses.map((status) => { const columnPromises = promises.filter((p: any) => p.status === status); const statusColor = STATUS_COLORS[status] || "#F4EDE3"; const isExpanded = expandedMobileCol === status; return (<div key={status} className="rounded-2xl border overflow-hidden" style={{ backgroundColor: T.cardBg, borderColor: T.cardBorder }}><button onClick={() => setExpandedMobileCol(isExpanded ? null : status)} className="w-full flex items-center justify-between px-4 py-3"><div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: statusColor }} /><span className="text-sm font-semibold" style={{ color: T.textPrimary }}>{status}</span><span className="text-[11px] px-2 py-1 rounded-full font-medium" style={{ backgroundColor: T.chipBg, color: T.textSecondary }}>{columnPromises.length}</span></div><ChevronDown size={16} style={{ color: T.textSecondary, transform: isExpanded ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }} /></button>{isExpanded && (<div className="px-3 pb-3 space-y-2">{columnPromises.length === 0 ? (<p className="text-xs text-center py-4" style={{ color: T.textSecondary }}>No promises here</p>) : (columnPromises.map((p: any) => <BoardCard key={p.id} p={p} status={status} />))}</div>)}</div>); })}</div>
       </div>
     );
   };
