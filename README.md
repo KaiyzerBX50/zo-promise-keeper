@@ -20,6 +20,7 @@ A warm, sunrise-toned personal accountability Space for [Zo Computer](https://zo
 - **Message Templates** — 6 pre-written warm accountability messages (copy to clipboard)
 - **Zo Prompts** — 7 saved prompts for extracting commitments and drafting follow-ups
 - **Light / Dark Mode** — Toggle with localStorage persistence
+- **Board** — Kanban-style drag-and-drop view with 8 status columns (Inbox → Planned → On Track → Due Soon → Needs Attention → Waiting on Someone → Done → Dropped)
 
 ## Promise Categories
 

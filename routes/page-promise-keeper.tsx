@@ -3,7 +3,7 @@ import {
   Heart, Plus, CheckCircle, Clock, AlertCircle, Users, Zap, Send,
   ChevronDown, X, Edit3, Trash2, MessageSquare, Star, Calendar,
   RefreshCw, BookOpen, ArrowRight, Sun, Moon, Target, UserCheck, Filter,
-  FileText, Copy, Check
+  FileText, Copy, Check, LayoutGrid, GripVertical
 } from "lucide-react";
 
 const API = "/api/promise-keeper";
@@ -260,6 +260,7 @@ const ZO_PROMPTS = [
 const TABS = [
   { id: "home", label: "Home", icon: Sun },
   { id: "capture", label: "Capture", icon: Plus },
+  { id: "board", label: "Board", icon: LayoutGrid },
   { id: "promises", label: "Promises", icon: BookOpen },
   { id: "people", label: "People", icon: Users },
   { id: "waiting", label: "Waiting On", icon: Clock },
@@ -279,6 +280,8 @@ export default function PromiseKeeper() {
   const [promiseFilter, setPromiseFilter] = useState("All Open");
   const [copiedTemplate, setCopiedTemplate] = useState<number | null>(null);
   const [copiedPrompt, setCopiedPrompt] = useState<number | null>(null);
+  const [draggedPromise, setDraggedPromise] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
     try { return localStorage.getItem("pk-dark") === "1"; } catch { return false; }
   });
@@ -863,6 +866,21 @@ export default function PromiseKeeper() {
     );
   };
 
+  const renderBoard = () => {
+    const boardStatuses = ["Inbox","Planned","On Track","Due Soon","Needs Attention","Waiting on Someone","Done","Dropped"];
+    const handleDragStart = (e: React.DragEvent, promiseId: string) => { e.dataTransfer.setData("text/plain", promiseId); e.dataTransfer.effectAllowed = "move"; setDraggedPromise(promiseId); };
+    const handleDragOver = (e: React.DragEvent, status: string) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverColumn(status); };
+    const handleDragLeave = (e: React.DragEvent) => { const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); const { clientX, clientY } = e; if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) { setDragOverColumn(null); } };
+    const handleDrop = (e: React.DragEvent, status: string) => { e.preventDefault(); const promiseId = e.dataTransfer.getData("text/plain"); if (promiseId) { const p = promises.find((pr: any) => pr.id === promiseId); if (p && p.status !== status) { api("update-promise", { id: promiseId, status }); } } setDraggedPromise(null); setDragOverColumn(null); };
+    const handleDragEnd = () => { setDraggedPromise(null); setDragOverColumn(null); };
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between"><div><h2 className="text-2xl font-bold" style={{ color: T.textPrimary }}>Board</h2><p className="text-sm" style={{ color: T.textSecondary }}>Drag promises between statuses</p></div><button onClick={() => setShowAddPromise(true)} className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold text-white" style={{ backgroundColor: T.accent }}><Plus size={16} /> Add</button></div>
+        <div className="overflow-x-auto pb-4 -mx-4 px-4"><div className="flex gap-3" style={{ minWidth: \`$\{boardStatuses.length * 272}px\` }}>{boardStatuses.map((status) => { const columnPromises = promises.filter((p: any) => p.status === status); const statusColor = STATUS_COLORS[status] || "#F4EDE3"; const isOver = dragOverColumn === status; return (<div key={status} className="flex-1 min-w-[256px] rounded-2xl border flex flex-col transition-all duration-150" style={{ backgroundColor: isOver ? (darkMode ? "rgba(255,143,122,0.08)" : "rgba(255,143,122,0.06)") : T.cardBg, borderColor: isOver ? T.accent : T.cardBorder, boxShadow: isOver ? \`0 0 0 1px $\{T.accent}40\` : "none" }} onDragOver={(e) => handleDragOver(e, status)} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, status)}><div className="px-3 py-2.5 border-b" style={{ borderColor: T.cardBorder }}><div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: statusColor }} /><span className="text-xs font-semibold" style={{ color: T.textPrimary }}>{status}</span></div><span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: T.chipBg, color: T.textSecondary }}>{columnPromises.length}</span></div><div className="p-2 flex-1 space-y-2 overflow-y-auto" style={{ maxHeight: "calc(100vh - 180px)" }}>{columnPromises.length === 0 ? (<div className="py-10 text-center rounded-xl border-2 border-dashed" style={{ borderColor: isOver ? T.accent : T.inputBorder }}><p className="text-xs" style={{ color: T.textSecondary }}>{isOver ? "Drop here" : "Empty"}</p></div>) : (columnPromises.map((p: any) => { const days = daysUntil(p.dueDate); const dueLabel = p.dueDate ? (days < 0 ? \`$\{Math.abs(days)}d overdue\` : days === 0 ? "Today" : \`$\{days}d\`) : ""; const isDragging = draggedPromise === p.id; return (<div key={p.id} draggable onDragStart={(e) => handleDragStart(e, p.id)} onDragEnd={handleDragEnd} className="p-3 rounded-xl border cursor-grab active:cursor-grabbing transition-all duration-150 group" style={{ backgroundColor: isDragging ? T.accentBg : T.inputBg, borderColor: isDragging ? T.accent : T.inputBorder, opacity: isDragging ? 0.4 : 1, transform: isDragging ? "scale(0.95)" : "scale(1)" }}><div className="flex items-start gap-2"><GripVertical size={14} className="shrink-0 mt-0.5 opacity-30 group-hover:opacity-60 transition-opacity" style={{ color: T.textSecondary }} /><div className="flex-1 min-w-0"><p className={\`text-sm font-medium leading-snug $\{status === "Done" ? "line-through opacity-50" : ""}\`} style={{ color: T.textPrimary }}>{p.promise}</p><div className="flex items-center gap-1.5 mt-1.5 flex-wrap">{p.personName && (<span className="text-[11px]" style={{ color: T.textSecondary }}>\u2192 {p.personName}</span>)}<PriorityBadge priority={p.priority} dark={darkMode} />{dueLabel && (<span className="text-[11px] font-medium" style={{ color: days < 0 ? "#FF8F7A" : days <= 2 ? "#FFB38A" : T.textSecondary }}>{dueLabel}</span>)}</div>{p.nextAction && (<p className="text-[11px] mt-1 truncate" style={{ color: T.textSecondary }}>\u2192 {p.nextAction}</p>)}</div></div><div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={(e) => { e.stopPropagation(); setEditingPromise(p); }} className="p-1 rounded-lg" style={{ backgroundColor: T.chipBg }}><Edit3 size={11} style={{ color: T.textSecondary }} /></button>{status !== "Done" && (<button onClick={(e) => { e.stopPropagation(); api("update-promise", { id: p.id, status: "Done" }); }} className="p-1 rounded-lg" style={{ backgroundColor: T.chipBg }}><CheckCircle size={11} style={{ color: "#B7F1D7" }} /></button>)}<button onClick={(e) => { e.stopPropagation(); api("delete-promise", { id: p.id }); }} className="p-1 rounded-lg" style={{ backgroundColor: T.chipBg }}><Trash2 size={11} style={{ color: T.accent }} /></button></div></div>); }))}</div></div>); })}</div></div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: T.bg }}>
@@ -907,6 +925,7 @@ export default function PromiseKeeper() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {tab === "home" && renderHome()}
         {tab === "capture" && renderCapture()}
+        {tab === "board" && renderBoard()}
         {tab === "promises" && renderPromises()}
         {tab === "people" && renderPeople()}
         {tab === "waiting" && renderWaiting()}
